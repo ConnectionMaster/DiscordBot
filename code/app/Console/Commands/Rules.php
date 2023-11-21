@@ -5,6 +5,7 @@ namespace App\Console\Commands;
 use Discord\DiscordCommandClient;
 use Discord\Parts\Channel\Message;
 use Discord\Parts\User\Member;
+use Discord\WebSockets\Intents;
 use Illuminate\Console\Command;
 
 class Rules extends Command
@@ -40,24 +41,29 @@ class Rules extends Command
      */
     public function handle()
     {
-        $discordClient = null;
+        $discord = null;
         try {
-            $discordClient = new DiscordCommandClient([
+            $discord = new DiscordCommandClient([
                 'token' => env('DISCORD_TOKEN'),
                 'prefix' => '.',
                 'defaultHelpCommand' => false,
+                'discordOptions' => [
+                    'token' => env('DISCORD_TOKEN'),
+                    'loadAllMembers' => true,
+                    'intents' => Intents::getDefaultIntents() | Intents::GUILD_MEMBERS | Intents::MESSAGE_CONTENT | Intents::GUILD_MESSAGES
+                ],
             ]);
 
             try {
-                $discordClient->registerCommand('rules', function (Message $message) use ($discordClient) {
+                $discord->registerCommand('rules', function (Message $message) use ($discord) {
                     $command = strtolower(substr($message->content, 7));
                     switch ($command) {
                         case 'agree':
                             if ($message->channel->name === 'bot-commands') {
-                                $guild = $discordClient->guilds->get('id', env('DISCORD_GUILD_ID'));
+                                $guild = $discord->guilds->get('id', env('DISCORD_GUILD_ID'));
                                 $guild->members->fetch($message->author->id)
                                     ->done(function (Member $member) use ($message) {
-                                        $member->addRole("775042190761525299")->done(function () use ($message) {
+                                        $member->addRole(env('DISCORD_GUILD_MEMBER_ROLE_ID'))->done(function () use ($message) {
                                             $message->reply('Welcome!');
                                         }, function ($e) use ($message) {
                                             $message->reply("you're already a member.");
@@ -66,7 +72,7 @@ class Rules extends Command
                             }
                             break;
                         case 'list':
-                            $guild = $discordClient->guilds->get('id', env('DISCORD_GUILD_ID'));
+                            $guild = $discord->guilds->get('id', env('DISCORD_GUILD_ID'));
                             $response = "**Rules:**".PHP_EOL.PHP_EOL.
                                 "**1)** Follow Discord TOS".PHP_EOL.
                                 "**2)** I believe in the 1st amendment. Don't be stupid and post anything that violates laws! No doxxing, making threats of physical harm or anything that will make me need to speak with law enforcement.".PHP_EOL.
@@ -85,7 +91,7 @@ class Rules extends Command
                 print_r($exception->getMessage());
             }
 
-            $discordClient->run();
+            $discord->run();
         } catch (\Exception $exception) {
             print_r($exception->getMessage() . PHP_EOL);
             echo "Cannot connect to Discord." . PHP_EOL;
