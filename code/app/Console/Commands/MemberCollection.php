@@ -4,12 +4,14 @@ namespace App\Console\Commands;
 
 use App\Models\Guild;
 use App\Models\Member;
+use Discord\Discord;
 use Discord\DiscordCommandClient;
 use Discord\Parts\Channel\Message;
 use Discord\Parts\User\Member as DiscordMember;
 use Discord\Parts\Guild\Guild as DiscordGuild;
 use Discord\Parts\User\User;
 use Discord\WebSockets\Event;
+use Discord\WebSockets\Intents;
 use Illuminate\Console\Command;
 
 class MemberCollection extends Command
@@ -45,22 +47,27 @@ class MemberCollection extends Command
      */
     public function handle(): int
     {
-        $discordClient = null;
+        $discord = null;
         try {
-            $discordClient = new DiscordCommandClient([
+            $discord = new DiscordCommandClient([
                 'token' => env('DISCORD_TOKEN'),
                 'prefix' => '.',
                 'defaultHelpCommand' => false,
+                'discordOptions' => [
+                    'token' => env('DISCORD_TOKEN'),
+                    'loadAllMembers' => true,
+                    'intents' => Intents::getDefaultIntents() | Intents::GUILD_MEMBERS | Intents::MESSAGE_CONTENT
+                ],
             ]);
         }
         catch (\Exception $exception) {
             echo "Cannot connect to Discord.".PHP_EOL;
         }
 
-        if (!is_null($discordClient)) {
+        if (!is_null($discord)) {
 
             if (env('BOT_AUTO_MEMBER_COLLECT', true)) {
-                $discordClient->on('ready', function($discord) {
+                $discord->on('init', function($discord) {
                     $discord->on(Event::GUILD_MEMBER_ADD, function(DiscordMember $member) {
                         $this->collect($member);
                     });
@@ -69,15 +76,15 @@ class MemberCollection extends Command
 
             if (env('BOT_MEMBER_COLLECT_ALLOW_MANUAL', true)) {
                 try {
-                    $discordClient->registerCommand('collect', function (Message $message) use ($discordClient) {
+                    $discord->registerCommand('collect', function (Message $message) use ($discord) {
                         $command = strtolower(substr($message->content, 9));
                         if ($command === '') {
                             $this->collect($message->member);
                         } else {
                             $id = filter_var($command, FILTER_SANITIZE_NUMBER_INT);
-                            $discordClient->users->fetch($id)->done(
-                                function (User $user) use ($discordClient, $message) {
-                                    $discordClient->guilds->fetch($message->guild_id)->done(
+                            $discord->users->fetch($id)->done(
+                                function (User $user) use ($discord, $message) {
+                                    $discord->guilds->fetch($message->guild_id)->done(
                                         function(DiscordGuild $guild) use ($user) {
                                             $this->collect($user, $guild->id, $guild->name);
                                         },
@@ -97,7 +104,7 @@ class MemberCollection extends Command
                 }
             }
 
-            $discordClient->run();
+            $discord->run();
         }
         return 0;
     }
