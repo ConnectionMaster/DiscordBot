@@ -7,6 +7,7 @@ use Discord\Parts\Channel\Message;
 use Discord\Parts\Embed\Embed;
 use Discord\Parts\User\Member;
 use Discord\Parts\WebSockets\MessageReaction;
+use Discord\WebSockets\Intents;
 use Illuminate\Console\Command;
 use function Discord\getColor;
 
@@ -44,14 +45,19 @@ class Poll extends Command
     public function handle()
     {
         try {
-            $discordClient = new DiscordCommandClient([
+            $discord = new DiscordCommandClient([
                 'token' => env('DISCORD_TOKEN'),
                 'prefix' => '.',
                 'defaultHelpCommand' => false,
+                'discordOptions' => [
+                    'token' => env('DISCORD_TOKEN'),
+                    'loadAllMembers' => true,
+                    'intents' => Intents::getDefaultIntents() | Intents::GUILD_MEMBERS | Intents::MESSAGE_CONTENT
+                ],
             ]);
 
             try {
-                $discordClient->registerCommand('poll', function (Message $message) use ($discordClient) {
+                $discord->registerCommand('poll', function (Message $message) use ($discord) {
                     $command = strtolower(substr($message->content, 6));
                     if (is_numeric(substr($command, '0', '1'))) {
                         $pollNum = explode(' ', $command);
@@ -84,7 +90,7 @@ class Poll extends Command
                 print_r($exception->getMessage());
             }
 
-            $discordClient->run();
+            $discord->run();
         } catch (\Exception $exception) {
             print_r($exception->getMessage() . PHP_EOL);
             echo "Cannot connect to Discord." . PHP_EOL;
