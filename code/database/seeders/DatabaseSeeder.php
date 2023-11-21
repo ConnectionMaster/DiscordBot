@@ -8,6 +8,7 @@ use Discord\Discord;
 use Discord\Exceptions\IntentException;
 use Discord\Parts\Guild\Guild as DiscordGuild;
 use Discord\Parts\Guild\Role as DiscordRole;
+use Discord\WebSockets\Intents;
 use Illuminate\Database\Seeder;
 
 class DatabaseSeeder extends Seeder
@@ -21,9 +22,11 @@ class DatabaseSeeder extends Seeder
     {
         try {
             $discordClient = new Discord([
-                'token' => env('DISCORD_TOKEN'),
-            ]);
-            $discordClient->on('ready', function ($discordClient) {
+                    'token' => env('DISCORD_TOKEN'),
+                    'loadAllMembers' => true,
+                    'intents' => Intents::getDefaultIntents() | Intents::GUILD_MEMBERS | Intents::MESSAGE_CONTENT
+                ]);
+            $discordClient->on('init', function ($discordClient) {
                 $guild = Guild::find(env('DISCORD_GUILD_ID'));
                 $roles = [
                     ['name' => 'Purple', 'value' => 1000, "color" => 0xff00ff],

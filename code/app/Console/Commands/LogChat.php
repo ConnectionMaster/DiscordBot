@@ -46,10 +46,6 @@ class LogChat extends Command
                 'token' => env('DISCORD_TOKEN'),
                 'intents' => Intents::getDefaultIntents() | Intents::MESSAGE_CONTENT,
             ]);
-//            $discordClient = new DiscordCommandClient([
-//                'token' => env('DISCORD_TOKEN'),
-//                'defaultHelpCommand' => false,
-//            ]);
         }
         catch (\Exception $exception) {
             echo "Cannot connect to Discord.".PHP_EOL;

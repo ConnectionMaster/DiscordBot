@@ -51,18 +51,23 @@ class Points extends Command
     public function handle(): int
     {
         try {
-            $discordClient = new DiscordCommandClient([
+            $discord = new DiscordCommandClient([
                 'token' => env('DISCORD_TOKEN'),
                 'prefix' => '.',
                 'defaultHelpCommand' => false,
-                'intents' => Intents::getDefaultIntents(),
+                'discordOptions' => [
+                    'token' => env('DISCORD_TOKEN'),
+                    'loadAllMembers' => true,
+                    'intents' => Intents::getDefaultIntents() | Intents::GUILD_MEMBERS | Intents::MESSAGE_CONTENT
+                ],
+
             ]);
 
             try {
-                $discordClient->registerCommand('points', function (Message $message) use ($discordClient) {
+                $discord->registerCommand('points', function (Message $message) use ($discord) {
                     $command = strtolower(substr($message->content, 8));
                     if ($command === '') {
-                        $this->showHelp($discordClient, $message->channel_id);
+                        $this->showHelp($discord, $message->channel_id);
                     } else {
                         try {
                             $m = $this->getMember($message->author->id, $message->guild_id);
@@ -81,17 +86,17 @@ class Points extends Command
                                     $message->reply('todo');
                                     break;
                                 default:
-                                    $this->showHelp($discordClient, $message->channel_id);
+                                    $this->showHelp($discord, $message->channel_id);
 
                             }
                         }
                         catch(Exception $exception) {
                             $message->reply($exception->getMessage());
-                            $this->showHelp($discordClient, $message->channel_id);
+                            $this->showHelp($discord, $message->channel_id);
                         }
                     }
                 });
-                $discordClient->registerCommand('balance', function (Message $message) use ($discordClient) {
+                $discord->registerCommand('balance', function (Message $message) use ($discord) {
                     try {
                         $m = $this->getMember($message->author->id, $message->guild_id);
 
@@ -102,16 +107,16 @@ class Points extends Command
                     }
                     catch(Exception $exception) {
                         $message->reply($exception->getMessage());
-                        $this->showHelp($discordClient, $message->channel_id);
+                        $this->showHelp($discord, $message->channel_id);
                     }
                 });
-                $discordClient->registerAlias('bal', 'balance');
-                $discordClient->registerAlias('$', 'balance');
+                $discord->registerAlias('bal', 'balance');
+                $discord->registerAlias('$', 'balance');
 
-                $discordClient->registerCommand('send', function (Message $message) use ($discordClient) {
+                $discord->registerCommand('send', function (Message $message) use ($discord) {
                     $command = strtolower(substr($message->content, 6));
                     if ($command === '') {
-                        $this->showHelp($discordClient, $message->channel_id);
+                        $this->showHelp($discord, $message->channel_id);
                     } else {
                         try {
                             $m = $this->getMember($message->author->id, $message->guild_id);
@@ -145,12 +150,12 @@ class Points extends Command
                     }
                 });
 
-                $discordClient->registerCommand('shop', function (Message $message) use ($discordClient) {
+                $discord->registerCommand('shop', function (Message $message) use ($discord) {
                     $r = Role::where(['available'=>true])->get();
                     $roles = [];
                     foreach ($r as $role) {
                         $roles[] = new Field(
-                            $discordClient,
+                            $discord,
                             [
                                 'name' => $role->id . ') ' . $role->name,
                                 'value' => $role->value,
@@ -158,16 +163,16 @@ class Points extends Command
                             ]
                         );
                     }
-                    $discordClient->getChannel($message->channel_id)->sendEmbed(
+                    $discord->getChannel($message->channel_id)->sendEmbed(
                         new Embed(
-                            $discordClient,
+                            $discord,
                             [
                                 'title' => '__**Points Shop**__',
                                 'type' => 'rich',
                                 'description' => 'BUY ROLES!',
                                 'color' => 0xff0000,
                                 'thumbnail' => new Image(
-                                    $discordClient,
+                                    $discord,
                                     [
                                         'url' => 'https://emojipedia-us.s3.dualstack.us-west-1.amazonaws.com/thumbs/120/emojidex/112/convenience-store_1f3ea.png',
                                     ]
@@ -177,10 +182,10 @@ class Points extends Command
                         )
                     )->done(function(Message $message) {});
                 });
-                $discordClient->registerCommand('buy', function (Message $message) use ($discordClient) {
+                $discord->registerCommand('buy', function (Message $message) use ($discord) {
                     $command = strtolower(substr($message->content, 5));
                     if ($command === '') {
-                        $this->showHelp($discordClient, $message->channel_id);
+                        $this->showHelp($discord, $message->channel_id);
                     } else {
                         try {
                             $m = $this->getMember($message->author->id, $message->guild_id);
@@ -194,7 +199,7 @@ class Points extends Command
                             $itemNumber = (int) $args[0];
                             $role = Role::where(['id' => $itemNumber])->first();
                             if ($m->balance >= $role->value) {
-                                $discordClient->guilds->fetch($m->guild_id)
+                                $discord->guilds->fetch($m->guild_id)
                                     ->done(function(Guild $guild) use ($m, $role) {
                                         $guild->members->fetch($m->id)
                                             ->done(function(\Discord\Parts\User\Member $member) use ($m, $role) {
@@ -214,7 +219,7 @@ class Points extends Command
                     }
                 });
 
-                $discordClient->registerCommand('daily', function (Message $message) use ($discordClient) {
+                $discord->registerCommand('daily', function (Message $message) use ($discord) {
                     try {
                         $m = $this->getMember($message->author->id, $message->guild_id);
 
@@ -251,11 +256,11 @@ class Points extends Command
                     }
                     catch(Exception $exception) {
                         $message->reply($exception->getMessage());
-                        $this->showHelp($discordClient, $message->channel_id);
+                        $this->showHelp($discord, $message->channel_id);
                     }
                 });
 
-                $discordClient->registerCommand('timely', function (Message $message) use ($discordClient) {
+                $discord->registerCommand('timely', function (Message $message) use ($discord) {
                     try {
                         $m = $this->getMember($message->author->id, $message->guild_id);
 
@@ -284,14 +289,14 @@ class Points extends Command
                     }
                     catch(Exception $exception) {
                         $message->reply($exception->getMessage());
-                        $this->showHelp($discordClient, $message->channel_id);
+                        $this->showHelp($discord, $message->channel_id);
                     }
                 });
 
-                $discordClient->registerCommand('flip', function (Message $message) use ($discordClient) {
+                $discord->registerCommand('flip', function (Message $message) use ($discord) {
                     $command = strtolower(substr($message->content, 6));
                     if ($command === '') {
-                        $this->showHelp($discordClient, $message->channel_id);
+                        $this->showHelp($discord, $message->channel_id);
                     } else {
                         $m = $this->getMember($message->author->id, $message->guild_id);
                         $bet = filter_var($command, FILTER_SANITIZE_NUMBER_INT);
@@ -299,25 +304,25 @@ class Points extends Command
                             $m->balance -= $bet;
                             $m->save();
                             $e = new Embed(
-                                $discordClient,
+                                $discord,
                                 [
                                     'type' => 'rich',
                                     'color' => 0x00ff00,
                                     'title' => '__**Coin Flip**__',
                                     'description' => 'Flipping a coin....',
                                     'thumbnail' => new Image(
-                                        $discordClient,
+                                        $discord,
                                         [
                                             'url' => 'https://emojipedia-us.s3.dualstack.us-west-1.amazonaws.com/thumbs/120/whatsapp/273/coin_1fa99.png'
                                         ]
                                     ),
                                 ]
                             );
-                            $discordClient->getChannel($message->channel_id)
+                            $discord->getChannel($message->channel_id)
                                 ->sendEmbed($e)
-                                ->done(function(Message $message) use ($discordClient, $e, $m, $bet) {
-                                    $loop = $discordClient->getLoop();
-                                    $loop->addTimer(5, function() use ($discordClient, $message, $e, $m, $bet) {
+                                ->done(function(Message $message) use ($discord, $e, $m, $bet) {
+                                    $loop = $discord->getLoop();
+                                    $loop->addTimer(5, function() use ($discord, $message, $e, $m, $bet) {
                                         $result = (random_int(0,99)) % 2;
                                         $coin = $result ? 'tails' : 'heads';
                                         if ($result) {
@@ -325,8 +330,8 @@ class Points extends Command
                                             $m->save();
                                         }
                                         $e->description = "It landed on $coin! " .
-                                            (($result) ? "Sorry you lost." : "You WON!");
-                                        $discordClient->getChannel($message->channel_id)->sendEmbed($e);
+                                            (($result) ? "You WON!" : "Sorry you lost.");
+                                        $discord->getChannel($message->channel_id)->sendEmbed($e);
                                         $message->delete();
                                     });
                                 });
@@ -336,10 +341,10 @@ class Points extends Command
                     }
                 });
 
-                $discordClient->registerCommand('wheel', function (Message $message) use ($discordClient) {
+                $discord->registerCommand('wheel', function (Message $message) use ($discord) {
                     $command = strtolower(substr($message->content, 7));
                     if ($command === '') {
-                        $this->showHelp($discordClient, $message->channel_id);
+                        $this->showHelp($discord, $message->channel_id);
                     } else {
                         $m = $this->getMember($message->author->id, $message->guild_id);
                         $bet = filter_var($command, FILTER_SANITIZE_NUMBER_INT);
@@ -349,19 +354,19 @@ class Points extends Command
 
                             $v = [1.5, 1.7, 2.4, 0.2, 1.2, 0.1, 0.3, 0.5];
                             $e = new Embed(
-                                $discordClient,
+                                $discord,
                                 [
                                     'type' => 'rich',
                                     'color' => 0x00ff00,
                                     'title' => '__**Wheel of Money**__',
                                     'description' => 'Spinning the wheel.....',
                                     'thumbnail' => new Image(
-                                        $discordClient,
+                                        $discord,
                                         [
                                             'url' => 'https://static.vecteezy.com/system/protected/files/001/192/280/vecteezy_rainbow-spinning-wheel_1192280.png'
                                         ]
                                     ),
-                                    'fields' => $this->getWheel($discordClient, $v),
+                                    'fields' => $this->getWheel($discord, $v),
                                 ]
                             );
 
@@ -371,7 +376,7 @@ class Points extends Command
 //                            $guzzleClient->post();
 
 //                            $e = new Embed(
-//                                $discordClient,
+//                                $discord,
 //                                [
 //                                    'type' => 'image',
 //                                    'color' => 0x00ff00,
@@ -381,11 +386,11 @@ class Points extends Command
 //                                ]
 //                            );
 
-                            $discordClient->getChannel($message->channel_id)
+                            $discord->getChannel($message->channel_id)
                                 ->sendEmbed($e)
-                                ->done(function(Message $message) use ($discordClient, $e, $m, $bet, $v) {
-                                    $loop = $discordClient->getLoop();
-                                    $loop->addTimer(5, function() use ($discordClient, $message, $e, $m, $bet, $v) {
+                                ->done(function(Message $message) use ($discord, $e, $m, $bet, $v) {
+                                    $loop = $discord->getLoop();
+                                    $loop->addTimer(5, function() use ($discord, $message, $e, $m, $bet, $v) {
                                         $result = (random_int(0,79)) % 8;
                                         for ($i = 0; $i < $result; $i++) {
                                             array_push($v, array_shift($v));
@@ -393,9 +398,9 @@ class Points extends Command
                                         $prize = $bet * $v[1];
                                         $m->balance += $prize;
                                         $m->save();
-                                        $e->fields = $this->getWheel($discordClient, $v);
+                                        $e->fields = $this->getWheel($discord, $v);
                                         $e->description = "Wheel landed on $v[1]x." . PHP_EOL . "You win $prize!";
-                                        $discordClient->getChannel($message->channel_id)->sendEmbed($e);
+                                        $discord->getChannel($message->channel_id)->sendEmbed($e);
                                         $message->delete();
                                     });
                                 });
@@ -409,7 +414,7 @@ class Points extends Command
                 print_r($exception->getMessage());
             }
 
-            $discordClient->run();
+            $discord->run();
         } catch (Exception $exception) {
             print_r($exception->getMessage() . PHP_EOL);
             echo "Cannot connect to Discord." . PHP_EOL;
@@ -445,25 +450,25 @@ class Points extends Command
         return $wheel;
     }
 
-    private function showHelp($discordClient, $channelId): void
+    private function showHelp($discord, $channelId): void
     {
-        $discordClient->getChannel($channelId)->sendEmbed(
+        $discord->getChannel($channelId)->sendEmbed(
             new Embed(
-                $discordClient,
+                $discord,
                 [
                     'type' => 'rich',
                     'color' => 0x00ff00,
                     'title' => '__**Points System**__',
                     'description' => 'Make sure you run `.collect` to be in the system.',
                     'thumbnail' => new Image(
-                        $discordClient,
+                        $discord,
                         [
                             'url' => 'https://emojipedia-us.s3.dualstack.us-west-1.amazonaws.com/thumbs/120/facebook/65/money-bag_1f4b0.png'
                         ]
                     ),
                     'fields' => [
                         new Field(
-                            $discordClient,
+                            $discord,
                             [
                                 'name'  => '`.$ | .bal | .balance`',
                                 'value' => 'shows current point balance',
@@ -471,7 +476,7 @@ class Points extends Command
                             ]
                         ),
                         new Field(
-                            $discordClient,
+                            $discord,
                             [
                                 'name'  => '`.send # @user`',
                                 'value' => 'sends @user `#` number of points',
@@ -479,7 +484,7 @@ class Points extends Command
                             ]
                         ),
                         new Field(
-                            $discordClient,
+                            $discord,
                             [
                                 'name'  => '`.shop`',
                                 'value' => 'see what is available at the shop',
@@ -487,7 +492,7 @@ class Points extends Command
                             ]
                         ),
                         new Field(
-                            $discordClient,
+                            $discord,
                             [
                                 'name'  => '`.buy #`',
                                 'value' => 'buy item from shop',
@@ -495,15 +500,15 @@ class Points extends Command
                             ]
                         ),
                         new Field(
-                            $discordClient,
+                            $discord,
                             [
                                 'name'  => '`.daily`',
-                                'value' => 'get a daily bonus of 100 pts',
+                                'value' => 'get a daily bonus of 10 pts x your `.timely` streak',
                                 'inline' => false
                             ]
                         ),
                         new Field(
-                            $discordClient,
+                            $discord,
                             [
                                 'name'  => '`.timely`',
                                 'value' => 'try to get a 7 day streak bonus',
@@ -511,7 +516,7 @@ class Points extends Command
                             ]
                         ),
                         new Field(
-                            $discordClient,
+                            $discord,
                             [
                                 'name'  => '`.flip #`',
                                 'value' => 'Place a bet of `#`, flip a coin, if it lands on heads you win 1.5x your bet',
@@ -519,7 +524,7 @@ class Points extends Command
                             ]
                         ),
                         new Field(
-                            $discordClient,
+                            $discord,
                             [
                                 'name'  => '`.wheel #`',
                                 'value' => 'Place a bet of `#`, spin the wheel, win a prize',
