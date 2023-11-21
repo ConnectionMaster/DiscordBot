@@ -12,7 +12,9 @@ use Discord\Parts\Embed\Embed;
 use Discord\Parts\Embed\Field;
 use Discord\Parts\Embed\Image;
 use Discord\Parts\Guild\Guild;
+use Discord\WebSockets\Intents;
 use Exception;
+use GuzzleHttp\Client;
 use Illuminate\Console\Command;
 
 class Points extends Command
@@ -53,6 +55,7 @@ class Points extends Command
                 'token' => env('DISCORD_TOKEN'),
                 'prefix' => '.',
                 'defaultHelpCommand' => false,
+                'intents' => Intents::getDefaultIntents(),
             ]);
 
             try {
@@ -362,16 +365,21 @@ class Points extends Command
                                 ]
                             );
 
-                            $e = new Embed(
-                                $discordClient,
-                                [
-                                    'type' => 'image',
-                                    'color' => 0x00ff00,
-                                    'title' => '__**Wheel of Money**__',
-                                    'description' => 'Spinning the wheel.....',
+//                            $image = imagecreate(150, 150);
+//
+//                            $guzzleClient = new Client();
+//                            $guzzleClient->post();
 
-                                ]
-                            );
+//                            $e = new Embed(
+//                                $discordClient,
+//                                [
+//                                    'type' => 'image',
+//                                    'color' => 0x00ff00,
+//                                    'title' => '__**Wheel of Money**__',
+//                                    'description' => 'Spinning the wheel.....',
+//
+//                                ]
+//                            );
 
                             $discordClient->getChannel($message->channel_id)
                                 ->sendEmbed($e)

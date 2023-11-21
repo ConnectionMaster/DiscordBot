@@ -2,7 +2,9 @@
 
 namespace App\Console\Commands;
 
+use Discord\Discord;
 use Discord\DiscordCommandClient;
+use Discord\WebSockets\Intents;
 use Illuminate\Console\Command;
 
 class LogChat extends Command
@@ -38,26 +40,30 @@ class LogChat extends Command
      */
     public function handle()
     {
-        $discordClient = null;
+        $discord = null;
         try {
-            $discordClient = new DiscordCommandClient([
+            $discord = new Discord([
                 'token' => env('DISCORD_TOKEN'),
-                'defaultHelpCommand' => false,
+                'intents' => Intents::getDefaultIntents() | Intents::MESSAGE_CONTENT,
             ]);
+//            $discordClient = new DiscordCommandClient([
+//                'token' => env('DISCORD_TOKEN'),
+//                'defaultHelpCommand' => false,
+//            ]);
         }
         catch (\Exception $exception) {
             echo "Cannot connect to Discord.".PHP_EOL;
         }
 
-        if (!is_null($discordClient)) {
-            $discordClient->on('ready', function($discord) {
+        if (!is_null($discord)) {
+            $discord->on('init', function($discord) {
                 $discord->on('message', function($message) {
                     $text = date("Y-m-d H:i:s") . ' ' . $message->author->username. ': ' . $message->content . PHP_EOL;
                     file_put_contents(storage_path("logs/{$message->channel->name}.log"), $text , FILE_APPEND | LOCK_EX);
                 });
             });
 
-            $discordClient->run();
+            $discord->run();
         }
         return 0;
     }

@@ -9,14 +9,15 @@
     "license": "MIT",
     "require": {
         "php": "^7.3|^8.0",
+        "ext-gd": "*",
+        "ext-json": "*",
         "fideloper/proxy": "^4.4",
         "fruitcake/laravel-cors": "^2.0",
-        "guzzlehttp/guzzle": "^7.0.1",
+        "guzzlehttp/guzzle": "^7.7",
         "laravel/framework": "^8.12",
         "laravel/tinker": "^2.5",
-        "team-reflex/discord-php": "dev-master",
-        "ext-gd": "*",
-        "ext-json": "*"
+        "symfony/dom-crawler": "^6.3",
+        "team-reflex/discord-php": "dev-master"
     },
     "require-dev": {
         "barryvdh/laravel-ide-helper": "^2.10",
