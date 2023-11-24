@@ -16,6 +16,7 @@
         "guzzlehttp/guzzle": "^7.7",
         "laravel/framework": "^8.12",
         "laravel/tinker": "^2.5",
+        "laravel/ui": "^3.4",
         "symfony/dom-crawler": "^6.3",
         "team-reflex/discord-php": "dev-master"
     },
